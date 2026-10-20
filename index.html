@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subnetting-Slider</title>
+  <meta name="description" content="Subnetzmasken verstehen, Netze teilen und das Rechnen mit CIDR üben – interaktiv mit Schiebereglern.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Subnetting-Slider</h1>
+    <p class="lead">Subnetzmasken verstehen, Netze teilen und das Rechnen mit CIDR üben – alles per Schieberegler.</p>
+  </header>
+
+  <main>
+    <!-- Spickzettel -->
+    <details class="card cheatsheet">
+      <summary>Spickzettel: So rechnest du</summary>
+      <ul>
+        <li>
+          <b>Netz teilen:</b> In 2<sup>k</sup> gleich große Teilnetze teilen heißt <b>k Bits leihen</b>. Neue CIDR = alte CIDR + k.
+          <span class="example">/12 in 2 Netze → k = 1 → /13 &nbsp;·&nbsp; /12 in 4 Netze → k = 2 → /14</span>
+        </li>
+        <li>
+          <b>Anzahl Teilnetze:</b> 2<sup>(neue CIDR − alte CIDR)</sup>.
+          <span class="example">/12 in /16-Netze aufteilen → 2<sup>4</sup> = 16 Netze</span>
+        </li>
+        <li>
+          <b>Größe:</b> Adressen = 2<sup>(32 − CIDR)</sup>, nutzbare Hosts = Adressen − 2 (Netzadresse und Broadcast fallen weg).
+          <span class="example">/26 → 2<sup>6</sup> = 64 Adressen → 62 Hosts</span>
+        </li>
+        <li>
+          <b>Maske ↔ CIDR:</b> Die CIDR-Zahl ist die Anzahl der 1-Bits von links. Ein angefangenes Oktett hat für 1 bis 8 Bits den Wert
+          <span class="mono">128, 192, 224, 240, 248, 252, 254, 255</span>.
+          <span class="example">/20 = 16 + 4 Bits → 255.255.240.0</span>
+        </li>
+      </ul>
+    </details>
+
+    <!-- 1 · Explorer -->
+    <section class="card" id="explorer">
+      <h2>1 · Subnetzmaske erkunden</h2>
+
+      <div class="slider-row">
+        <label for="prefix">Präfixlänge</label>
+        <div class="track">
+          <input type="range" id="prefix" min="0" max="32" value="24" step="1">
+          <div class="ticks" aria-hidden="true"><span>/0</span><span>/8</span><span>/16</span><span>/24</span><span>/32</span></div>
+        </div>
+        <output for="prefix" id="prefix-out" class="cidr-big">/24</output>
+      </div>
+
+      <div class="bits" id="ex-bits"></div>
+      <div class="legend">
+        <span style="--c: var(--net)">Netzbits (1)</span>
+        <span style="--c: var(--host)">Hostbits (0)</span>
+        <span class="legend-tip">Tipp: Klicke auf ein Bit, um die Grenze zu verschieben.</span>
+      </div>
+
+      <p class="summary" id="ex-summary"></p>
+
+      <dl class="facts">
+        <div><dt>Subnetzmaske</dt><dd id="ex-mask" class="mono"></dd></div>
+        <div><dt>Wildcard-Maske</dt><dd id="ex-wildcard" class="mono"></dd></div>
+        <div><dt>Adressen</dt><dd id="ex-addr"></dd></div>
+        <div><dt>Nutzbare Hosts</dt><dd id="ex-hosts"></dd></div>
+      </dl>
+
+      <div class="ip-row">
+        <label for="ex-ip">Beispiel-IP</label>
+        <input type="text" id="ex-ip" class="mono" value="192.168.1.77" inputmode="decimal" spellcheck="false" autocomplete="off">
+        <span class="muted">Die Maske wird auf diese Adresse angewendet.</span>
+      </div>
+      <dl class="facts">
+        <div><dt>Netzadresse</dt><dd id="ex-net" class="mono"></dd></div>
+        <div><dt>Erster Host</dt><dd id="ex-first" class="mono"></dd></div>
+        <div><dt>Letzter Host</dt><dd id="ex-last" class="mono"></dd></div>
+        <div><dt>Broadcast</dt><dd id="ex-bc" class="mono"></dd></div>
+      </dl>
+    </section>
+
+    <!-- 2 · Netz teilen -->
+    <section class="card" id="split">
+      <h2>2 · Netz teilen</h2>
+
+      <div class="ip-row">
+        <label for="sp-ip">Ausgangsnetz</label>
+        <input type="text" id="sp-ip" class="mono" value="172.16.0.0" inputmode="decimal" spellcheck="false" autocomplete="off">
+      </div>
+
+      <div class="slider-row">
+        <label for="sp-parent">Ausgangs-CIDR</label>
+        <div class="track"><input type="range" id="sp-parent" min="0" max="30" value="12" step="1"></div>
+        <output for="sp-parent" id="sp-parent-out" class="cidr-big">/12</output>
+      </div>
+
+      <div class="chips-row">
+        <span class="chips-label">Teilen in</span>
+        <div class="chips" id="sp-chips">
+          <button type="button" class="chip" data-k="1">2 Netze</button>
+          <button type="button" class="chip" data-k="2">4 Netze</button>
+          <button type="button" class="chip" data-k="3">8 Netze</button>
+          <button type="button" class="chip" data-k="4">16 Netze</button>
+          <button type="button" class="chip" data-k="5">32 Netze</button>
+          <button type="button" class="chip" data-k="6">64 Netze</button>
+        </div>
+      </div>
+
+      <div class="slider-row">
+        <label for="sp-child">Teilnetz-CIDR</label>
+        <div class="track"><input type="range" id="sp-child" min="0" max="32" value="14" step="1"></div>
+        <output for="sp-child" id="sp-child-out" class="cidr-big">/14</output>
+      </div>
+
+      <p class="summary" id="sp-summary"></p>
+
+      <div class="bits" id="sp-bits"></div>
+      <div class="legend">
+        <span style="--c: var(--net)">Netzbits des Ausgangsnetzes</span>
+        <span style="--c: var(--borrow)">Geliehene Bits (Nummer des Teilnetzes)</span>
+        <span style="--c: var(--host)">Hostbits</span>
+      </div>
+
+      <div class="split-visual">
+        <div class="parent-bar mono" id="sp-parent-bar"></div>
+        <div class="blocks" id="sp-blocks"></div>
+        <p class="note" id="sp-blocks-note"></p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Nr.</th><th>Teilnetz</th><th>Erster Host</th><th>Letzter Host</th><th>Broadcast</th></tr>
+          </thead>
+          <tbody id="sp-tbody"></tbody>
+        </table>
+        <p class="note" id="sp-table-note"></p>
+      </div>
+    </section>
+
+    <!-- 3 · Übungen -->
+    <section class="card" id="quiz">
+      <h2>3 · Rechenübungen</h2>
+
+      <fieldset class="types">
+        <legend>Aufgabentypen</legend>
+        <div class="type-list">
+          <label><input type="checkbox" data-group="split" checked> Netze teilen</label>
+          <label><input type="checkbox" data-group="size" checked> Hosts &amp; Größe</label>
+          <label><input type="checkbox" data-group="mask" checked> Maske ↔ CIDR</label>
+          <label><input type="checkbox" data-group="addr" checked> Netzadressen</label>
+        </div>
+      </fieldset>
+
+      <p class="question" id="q-text"></p>
+
+      <form class="answer-form" id="q-form" autocomplete="off">
+        <input type="text" id="q-answer" spellcheck="false" aria-label="Antwort">
+        <button type="submit" class="btn primary" id="q-submit">Prüfen</button>
+      </form>
+
+      <div class="hint" id="q-hint"></div>
+      <div class="feedback" id="q-feedback" aria-live="polite"></div>
+
+      <div class="q-actions">
+        <button type="button" class="btn" id="q-hint-btn">Tipp</button>
+        <button type="button" class="btn" id="q-show">Im Slider ansehen</button>
+        <button type="button" class="btn" id="q-skip">Überspringen</button>
+      </div>
+
+      <p class="score" id="q-score"></p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
